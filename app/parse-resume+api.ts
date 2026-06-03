@@ -1,5 +1,5 @@
 import { unzipSync } from "fflate";
-import { getClient, extractJson, MODEL, responseText } from "@/lib/anthropic";
+import { openaiJSON } from "@/lib/openai";
 import { emptyProfile, ResumeProfile } from "@/types";
 
 const DOCX_TYPE =
@@ -50,44 +50,36 @@ export async function POST(req: Request): Promise<Response> {
       text?: string;
     };
 
-    const client = getClient();
-
-    const userContent: any[] = [];
+    // Resolve the resume to plain text. OpenAI's chat endpoint can't read raw
+    // PDF bytes, so PDFs are politely declined (the user continues anyway).
+    let resumeText: string;
     if (base64 && mimeType === "application/pdf") {
-      userContent.push({
-        type: "document",
-        source: { type: "base64", media_type: "application/pdf", data: base64 },
-      });
+      return Response.json(
+        {
+          error:
+            "Can't auto-read PDFs yet — add your work preference below and continue.",
+          noKey: false,
+        },
+        { status: 422 }
+      );
     } else if (base64 && mimeType === DOCX_TYPE) {
-      // Word .docx — extract text, then hand it to Claude as text.
-      const docText = extractDocxText(base64);
-      userContent.push({ type: "text", text: `RESUME TEXT:\n${docText}` });
+      resumeText = extractDocxText(base64);
     } else if (text) {
-      userContent.push({ type: "text", text: `RESUME TEXT:\n${text}` });
+      resumeText = text;
     } else if (base64) {
-      // Plain text, legacy .doc, or unknown — best-effort decode to text.
-      const decoded = Buffer.from(base64, "base64")
+      resumeText = Buffer.from(base64, "base64")
         .toString("utf8")
         .replace(/[^\x09\x0A\x0D\x20-\x7E]+/g, " ");
-      userContent.push({ type: "text", text: `RESUME TEXT:\n${decoded}` });
     } else {
       return Response.json({ error: "No resume provided." }, { status: 400 });
     }
-    userContent.push({
-      type: "text",
-      text: "Extract the profile as specified. JSON only.",
-    });
 
-    const msg = await client.messages.create({
-      model: MODEL,
-      max_tokens: 1500,
-      system: [
-        { type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } },
-      ],
-      messages: [{ role: "user", content: userContent }],
-    });
+    const parsed = await openaiJSON<Partial<ResumeProfile>>(
+      SYSTEM,
+      `RESUME TEXT:\n${resumeText}\n\nExtract the profile as specified. JSON only.`,
+      1500
+    );
 
-    const parsed = extractJson<Partial<ResumeProfile>>(responseText(msg));
     const profile: ResumeProfile = {
       ...emptyProfile,
       ...parsed,
@@ -106,10 +98,7 @@ export async function POST(req: Request): Promise<Response> {
   } catch (err: any) {
     console.error("[parse-resume]", err);
     const message = err?.message ?? "Failed to parse resume.";
-    const noKey = message.includes("ANTHROPIC_API_KEY");
-    return Response.json(
-      { error: message, noKey },
-      { status: noKey ? 503 : 500 }
-    );
+    const noKey = message.includes("OPENAI_API_KEY");
+    return Response.json({ error: message, noKey }, { status: noKey ? 503 : 500 });
   }
 }

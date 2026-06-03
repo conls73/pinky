@@ -6,11 +6,12 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "vercel-build": "expo export -p web"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.100.1",
     "@expo/metro-runtime": "~3.2.3",
+    "@expo/server": "0.4.4",
     "@expo/vector-icons": "^14.0.3",
     "expo": "~51.0.39",
     "expo-clipboard": "~6.0.3",
