@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Pinky",
+    "slug": "pinky",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.png",
+    "scheme": "pinky",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFE3F1"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pinky.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#FFE3F1"
+      },
+      "package": "com.pinky.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "server",
+      "favicon": "./assets/logo.png"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
