@@ -23,7 +23,7 @@ export function LeadCard({
       {lead.company ? <Text style={styles.company}>{lead.company}</Text> : null}
 
       <View style={styles.metaRow}>
-        <SourceBadge source={lead.source} />
+        <SourceBadge source={lead.source} url={lead.url} />
         {lead.location ? (
           <View style={styles.metaItem}>
             <Ionicons name="location-outline" size={14} color={colors.muted} />

@@ -4,52 +4,45 @@ import { Redirect, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
   Linking,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
+import { Pressable } from "react-native";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
 import { SourceBadge } from "@/components/SourceBadge";
 import { StepHeader } from "@/components/StepHeader";
-import { postJson } from "@/lib/api";
+import { draftCoverLetter } from "@/lib/coverLetter";
+import { destinationFor } from "@/lib/destination";
 import { usePinky } from "@/store/usePinky";
 import { cardShadow, colors } from "@/theme/colors";
-import { CoverLetter } from "@/types";
+import { noOutline } from "@/theme/webStyle";
 
 export default function LeadDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { leads, profile } = usePinky();
   const lead = leads.find((l) => l.id === id);
 
-  const [letter, setLetter] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  // Cover letter is drafted on-device (no API, no cost) and is fully editable.
+  const [letter, setLetter] = useState(() =>
+    lead ? draftCoverLetter(profile, lead) : ""
+  );
   const [copied, setCopied] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Stale or foreign id (e.g. an old deep link) — send the user somewhere useful.
   if (!lead) return <Redirect href={leads.length ? "/results" : "/home"} />;
 
-  function openListing() {
+  const showBadge = !!destinationFor(lead.source, lead.url);
+
+  function goToJob() {
     if (lead?.url) Linking.openURL(lead.url);
   }
 
-  async function generate() {
-    setBusy(true);
-    setError(null);
-    try {
-      const { coverLetter } = await postJson<CoverLetter>("/message", {
-        profile,
-        lead,
-      });
-      setLetter(coverLetter);
-    } catch (err: any) {
-      setError(err?.message ?? "Couldn't write the cover letter. Try again.");
-    } finally {
-      setBusy(false);
-    }
+  function rewrite() {
+    if (lead) setLetter(draftCoverLetter(profile, lead));
   }
 
   async function copy() {
@@ -63,14 +56,10 @@ export default function LeadDetailScreen() {
     <Screen>
       <StepHeader title={lead.title} canGoBack />
 
-      {/* Tapping anywhere on this card opens the original listing. */}
-      <Pressable
-        onPress={openListing}
-        style={({ pressed }) => [styles.card, pressed && { opacity: 0.96 }]}
-      >
-        {lead.source !== "Google Jobs" ? (
+      <View style={styles.card}>
+        {showBadge ? (
           <View style={styles.badgeRow}>
-            <SourceBadge source={lead.source} />
+            <SourceBadge source={lead.source} url={lead.url} />
           </View>
         ) : null}
         {lead.company ? <Text style={styles.company}>{lead.company}</Text> : null}
@@ -110,54 +99,42 @@ export default function LeadDetailScreen() {
             </ScrollView>
           </>
         ) : null}
+      </View>
 
-        {lead.url ? (
-          <View style={styles.linkRow}>
-            <Ionicons name="open-outline" size={16} color={colors.accent} />
-            <Text style={styles.link}>
-              {lead.source === "Craigslist" || lead.source === "RemoteOK"
-                ? `Open listing on ${lead.source}`
-                : "Open original listing"}
-            </Text>
-          </View>
-        ) : null}
-      </Pressable>
-
-      {error ? (
-        <View style={styles.errorRow}>
-          <Ionicons name="alert-circle-outline" size={16} color={colors.error} />
-          <Text style={styles.error}>{error}</Text>
+      {/* Primary action: send the user to the actual listing to apply. */}
+      {lead.url ? (
+        <View style={styles.goWrap}>
+          <PrimaryButton label="Go to job" onPress={goToJob} />
         </View>
       ) : null}
 
-      {letter ? (
-        <View style={styles.letterCard}>
-          <View style={styles.letterHeader}>
-            <Text style={styles.letterTitle}>Your cover letter</Text>
-            <Pressable onPress={copy} hitSlop={8} style={styles.copyBtn}>
-              <Ionicons
-                name={copied ? "checkmark" : "copy-outline"}
-                size={15}
-                color={colors.white}
-              />
-              <Text style={styles.copyText}>{copied ? "Copied" : "Copy"}</Text>
-            </Pressable>
-          </View>
-          <ScrollView style={styles.letterScroll} nestedScrollEnabled>
-            <Text style={styles.letterBody}>{letter}</Text>
-          </ScrollView>
-          <Pressable onPress={generate} style={styles.regen} hitSlop={8}>
-            <Ionicons name="refresh-outline" size={15} color={colors.accent} />
-            <Text style={styles.regenText}>Rewrite</Text>
+      {/* Editable cover-letter draft. */}
+      <View style={styles.letterCard}>
+        <View style={styles.letterHeader}>
+          <Text style={styles.letterTitle}>Cover letter</Text>
+          <Pressable onPress={copy} hitSlop={8} style={styles.copyBtn}>
+            <Ionicons
+              name={copied ? "checkmark" : "copy-outline"}
+              size={15}
+              color={colors.white}
+            />
+            <Text style={styles.copyText}>{copied ? "Copied" : "Copy"}</Text>
           </Pressable>
         </View>
-      ) : (
-        <PrimaryButton
-          label={busy ? "Writing…" : "Generate cover letter"}
-          loading={busy}
-          onPress={generate}
+        <TextInput
+          style={[styles.letterInput, noOutline]}
+          value={letter}
+          onChangeText={setLetter}
+          multiline
+          textAlignVertical="top"
+          placeholder="Write or edit your cover letter here…"
+          placeholderTextColor={colors.placeholder}
         />
-      )}
+        <Pressable onPress={rewrite} style={styles.regen} hitSlop={8}>
+          <Ionicons name="refresh-outline" size={15} color={colors.accent} />
+          <Text style={styles.regenText}>Start a fresh draft</Text>
+        </Pressable>
+      </View>
     </Screen>
   );
 }
@@ -218,20 +195,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   snippet: { color: colors.inkSecondary, fontSize: 13, lineHeight: 20 },
-  linkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 14,
-  },
-  link: { color: colors.accent, fontWeight: "600", fontSize: 13 },
-  errorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 12,
-  },
-  error: { flex: 1, color: colors.error, fontSize: 13 },
+  goWrap: { marginBottom: 16 },
   letterCard: {
     backgroundColor: colors.white,
     borderRadius: 14,
@@ -257,8 +221,17 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   copyText: { color: colors.white, fontWeight: "600", fontSize: 11 },
-  letterScroll: { maxHeight: 340 },
-  letterBody: { color: colors.inkSecondary, fontSize: 14, lineHeight: 22 },
+  letterInput: {
+    minHeight: 280,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    padding: 12,
+    color: colors.inkSecondary,
+    fontSize: 14,
+    lineHeight: 22,
+  },
   regen: {
     flexDirection: "row",
     alignItems: "center",

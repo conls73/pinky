@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { colors } from "@/theme/colors";
 
 export function StepHeader({
@@ -31,12 +31,17 @@ export function StepHeader({
         ) : (
           <View style={styles.backSpacer} />
         )}
+        <Image
+          source={require("../assets/logo.png")}
+          style={styles.brandLogo}
+        />
         {step ? (
           <Text style={styles.step}>
             Step {step} of {total}
           </Text>
-        ) : null}
-        <View style={styles.backSpacer} />
+        ) : (
+          <View style={styles.backSpacer} />
+        )}
       </View>
       <Text style={styles.title}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
@@ -64,6 +69,7 @@ const styles = StyleSheet.create({
   },
   backPressed: { backgroundColor: colors.surface },
   backSpacer: { width: 36 },
+  brandLogo: { width: 34, height: 34, resizeMode: "contain" },
   step: {
     color: colors.muted,
     fontWeight: "600",
