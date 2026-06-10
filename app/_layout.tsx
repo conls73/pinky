@@ -9,7 +9,7 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: "#FFE3F1" },
+          contentStyle: { backgroundColor: "#FFFFFF" },
           animation: "slide_from_right",
         }}
       />

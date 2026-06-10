@@ -1,19 +1,39 @@
-// Pink palette derived from the Pinky logo's hot pink.
+// Light, professional palette. Neutrals carry the UI; the brand pink is an
+// accent reserved for primary actions, links, and highlights.
 export const colors = {
-  pink: "#FF4FB0", // primary brand / buttons
-  pinkDark: "#E0359B", // pressed / accents
-  pinkDeep: "#C71585", // gradient bottom, headings
-  pinkSoft: "#FF8FCB", // field borders / subtle
-  pinkBg: "#FFE3F1", // screen background top
-  white: "#FFFFFF", // field fills, text on pink
-  ink: "#3A0A26", // dark text on light pink
-  inkSoft: "#7A4763", // muted text
-  black: "#111111", // text on white fields/cards
-  placeholder: "#8A8A8A", // neutral placeholder on white
+  // Brand accent
+  accent: "#EC4899", // primary buttons, links, active states
+  accentPressed: "#DB2777", // pressed / hover
+  accentSoft: "#FDF2F8", // tinted fills (why-it-fits, pressed chips)
+  accentBorder: "#FBCFE8", // tinted hairlines around accentSoft
+
+  // Neutrals
+  background: "#FFFFFF", // every screen background
+  surface: "#F8FAFC", // subtle panels, badges, description wells
+  border: "#E5E7EB", // hairline card/input borders
+  ink: "#0F172A", // headings, primary text
+  inkSecondary: "#334155", // body text
+  muted: "#64748B", // secondary / meta text, labels
+  placeholder: "#94A3B8",
+  white: "#FFFFFF",
+
+  // Status
+  success: "#059669",
+  error: "#DC2626",
+  errorBg: "#FEF2F2",
+  info: "#1D4ED8",
+  infoBg: "#EFF6FF",
+  infoBorder: "#BFDBFE",
 };
 
-// Background gradient stops (top -> bottom). Saturated enough that white text
-// stays readable across the whole screen.
-export const bgGradient = ["#FF6FBE", colors.pink, colors.pinkDeep] as const;
+// Shared soft shadow for cards so elevation looks consistent everywhere.
+// shadow* maps to box-shadow on web; elevation covers Android.
+export const cardShadow = {
+  shadowColor: "#0F172A",
+  shadowOpacity: 0.06,
+  shadowRadius: 8,
+  shadowOffset: { width: 0, height: 2 },
+  elevation: 2,
+} as const;
 
 export type Colors = typeof colors;

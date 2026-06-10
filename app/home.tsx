@@ -66,8 +66,9 @@ export default function HomeScreen() {
   const [work, setWork] = useState(params.preferencesText ?? "");
   const [parsing, setParsing] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
+  const [note, setNote] = useState<{ text: string; ok: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [workFocused, setWorkFocused] = useState(false);
 
   async function pickAndParse() {
     setNote(null);
@@ -87,13 +88,17 @@ export default function HomeScreen() {
         { base64, mimeType: asset.mimeType ?? "application/pdf" }
       );
       setProfile(profile);
-      setNote("Got it! Pinky read your resume. ✅");
+      setNote({
+        text: "Resume uploaded — we'll use it to rank and personalize results.",
+        ok: true,
+      });
     } catch (err: any) {
-      setNote(
-        err?.noKey
-          ? "Saved your resume. (Add an AI key to auto-read it — you can still continue.)"
-          : err?.message ?? "Couldn't read that file. You can still continue."
-      );
+      setNote({
+        text: err?.noKey
+          ? "Resume saved. Add an AI key to enable automatic parsing — you can still continue."
+          : err?.message ?? "We couldn't read that file. You can still continue.",
+        ok: false,
+      });
     } finally {
       setParsing(false);
     }
@@ -122,42 +127,61 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <View style={styles.logoBadge}>
+      <View style={styles.header}>
         <Image source={require("../assets/logo.png")} style={styles.logo} />
+        <Text style={styles.title}>Find work near you</Text>
+        <Text style={styles.tagline}>
+          Upload your resume, tell us what you're looking for, and get a ranked
+          list of local openings with tailored cover letters.
+        </Text>
       </View>
-      <Text style={styles.hi}>Welcome to Pinky</Text>
-      <Text style={styles.tagline}>
-        Upload your resume and tell Pinky what you want. Pinky hunts down local
-        jobs, gigs, and temp work that fit you.
-      </Text>
 
-      <Text style={styles.label}>1. Upload your resume (PDF)</Text>
+      <Text style={styles.label}>Resume</Text>
       <Pressable
         onPress={pickAndParse}
         disabled={parsing}
-        style={({ pressed }) => [styles.drop, pressed && { opacity: 0.9 }]}
+        style={({ pressed }) => [styles.drop, pressed && styles.dropPressed]}
       >
         <Ionicons
-          name={resumeFileName ? "document-text" : "cloud-upload-outline"}
-          size={36}
-          color={colors.pinkDeep}
+          name={resumeFileName ? "document-text-outline" : "cloud-upload-outline"}
+          size={32}
+          color={colors.accent}
         />
         <Text style={styles.dropTitle}>
-          {resumeFileName ?? "Tap to choose a PDF"}
+          {resumeFileName ?? "Upload your resume"}
         </Text>
         <Text style={styles.dropHint}>
-          {parsing ? "Reading your resume…" : "PDF, Word doc, or text file"}
+          {parsing ? "Reading your resume…" : "PDF, Word document, or text file"}
         </Text>
       </Pressable>
-      {note ? <Text style={styles.note}>{note}</Text> : null}
+      {note ? (
+        <View style={styles.noteRow}>
+          <Ionicons
+            name={note.ok ? "checkmark-circle" : "information-circle-outline"}
+            size={16}
+            color={note.ok ? colors.success : colors.muted}
+          />
+          <Text
+            style={[
+              styles.note,
+              { color: note.ok ? colors.success : colors.muted },
+            ]}
+          >
+            {note.text}
+          </Text>
+        </View>
+      ) : null}
 
       <Text style={[styles.label, styles.labelSpaced]}>
-        2. What kind of work? (optional)
+        What kind of work are you looking for?{" "}
+        <Text style={styles.optional}>(optional)</Text>
       </Text>
       <TextInput
-        style={[styles.area, noOutline]}
+        style={[styles.area, workFocused && styles.areaFocused, noOutline]}
         value={work}
         onChangeText={setWork}
+        onFocus={() => setWorkFocused(true)}
+        onBlur={() => setWorkFocused(false)}
         placeholder="e.g. steady full-time work I can start soon…"
         placeholderTextColor={colors.placeholder}
         multiline
@@ -165,15 +189,20 @@ export default function HomeScreen() {
       />
       <View style={styles.examples}>
         {EXAMPLES.map((ex) => (
-          <Text key={ex} style={styles.example} onPress={() => setWork(ex)}>
-            {ex}
-          </Text>
+          <Pressable
+            key={ex}
+            onPress={() => setWork(ex)}
+            style={({ pressed }) => [
+              styles.example,
+              pressed && styles.examplePressed,
+            ]}
+          >
+            <Text style={styles.exampleText}>{ex}</Text>
+          </Pressable>
         ))}
       </View>
 
-      <Text style={[styles.label, styles.labelSpaced]}>
-        3. Where do you want to work?
-      </Text>
+      <Text style={[styles.label, styles.labelSpaced]}>Location</Text>
       <CitySearch
         city={params.city}
         state={params.state}
@@ -182,11 +211,16 @@ export default function HomeScreen() {
         onToggleRemote={(remote) => setParams({ remote })}
       />
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? (
+        <View style={styles.errorRow}>
+          <Ionicons name="alert-circle-outline" size={16} color={colors.error} />
+          <Text style={styles.error}>{error}</Text>
+        </View>
+      ) : null}
 
       <View style={{ marginTop: 24 }}>
         <PrimaryButton
-          label={searching ? "FINDING JOBS…" : "GET STARTED"}
+          label={searching ? "Searching…" : "Find jobs"}
           loading={searching || parsing}
           onPress={getStarted}
           disabled={!canSearch}
@@ -197,101 +231,102 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  logoBadge: {
-    width: 96,
-    height: 96,
-    borderRadius: 28,
-    backgroundColor: colors.white,
-    alignSelf: "center",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    marginBottom: 12,
-    shadowColor: colors.pinkDeep,
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  logo: { width: 78, height: 78, resizeMode: "contain" },
-  hi: {
-    alignSelf: "center",
-    color: colors.white,
-    fontSize: 26,
-    fontWeight: "800",
+  header: { alignItems: "center", marginBottom: 28 },
+  logo: { width: 64, height: 64, resizeMode: "contain", marginBottom: 12 },
+  title: {
+    color: colors.ink,
+    fontSize: 24,
+    fontWeight: "700",
     marginBottom: 8,
   },
   tagline: {
-    color: colors.white,
+    color: colors.muted,
     fontSize: 15,
-    fontWeight: "500",
     lineHeight: 22,
     textAlign: "center",
-    marginBottom: 24,
   },
   label: {
-    color: colors.white,
-    fontWeight: "800",
-    fontSize: 14,
-    marginBottom: 10,
+    color: colors.muted,
+    fontWeight: "600",
+    fontSize: 13,
+    marginBottom: 8,
   },
+  optional: { color: colors.placeholder, fontWeight: "400" },
   labelSpaced: { marginTop: 28 },
   drop: {
     backgroundColor: colors.white,
-    borderRadius: 18,
-    borderWidth: 2,
+    borderRadius: 14,
+    borderWidth: 1.5,
     borderStyle: "dashed",
-    borderColor: colors.pinkSoft,
+    borderColor: colors.border,
     paddingVertical: 26,
     paddingHorizontal: 20,
     alignItems: "center",
   },
+  dropPressed: { backgroundColor: colors.surface },
   dropTitle: {
-    color: colors.black,
+    color: colors.ink,
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "600",
     marginTop: 10,
     textAlign: "center",
   },
-  dropHint: { color: colors.placeholder, fontSize: 13, marginTop: 4 },
-  note: {
-    color: colors.white,
-    fontSize: 13,
+  dropHint: { color: colors.muted, fontSize: 13, marginTop: 4 },
+  noteRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
     marginTop: 10,
+  },
+  note: {
+    flex: 1,
+    fontSize: 13,
     lineHeight: 19,
   },
   area: {
     backgroundColor: colors.white,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: colors.pinkSoft,
-    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 14,
     minHeight: 90,
     fontSize: 15,
-    color: colors.black,
+    color: colors.ink,
     marginBottom: 12,
   },
+  areaFocused: { borderColor: colors.accent },
   examples: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginBottom: 24,
   },
   example: {
-    backgroundColor: colors.white,
-    color: colors.black,
-    fontWeight: "700",
-    fontSize: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: 16,
-    paddingVertical: 7,
+    paddingVertical: 6,
     paddingHorizontal: 12,
-    overflow: "hidden",
+  },
+  examplePressed: {
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.accentBorder,
+  },
+  exampleText: {
+    color: colors.inkSecondary,
+    fontWeight: "500",
+    fontSize: 12,
+  },
+  errorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 16,
   },
   error: {
-    color: colors.white,
-    fontWeight: "600",
+    flex: 1,
+    color: colors.error,
+    fontWeight: "500",
     fontSize: 13,
-    marginTop: 14,
-    textAlign: "center",
   },
 });

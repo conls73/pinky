@@ -2,7 +2,8 @@ import { Lead } from "@/types";
 import { JobSource, JobSourceQuery } from "./types";
 
 // Cap on how many pages to pull (each page ~10 jobs = one billed request).
-const MAX_PAGES = 3;
+// 1 page = ~10 results = 1 SearchApi credit per search.
+const MAX_PAGES = 1;
 
 /**
  * Google Jobs via SearchApi.io (https://www.searchapi.io/docs/google-jobs).

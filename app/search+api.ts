@@ -3,8 +3,8 @@ import { openaiJSON } from "@/lib/openai";
 import { sampleLeads } from "@/lib/sampleLeads";
 import { Lead, RankedLead, ResumeProfile, SearchParams } from "@/types";
 
-// Soft cap on how many live jobs to gather + rank.
-const MAX_RESULTS = 40;
+// Soft cap on how many live jobs to gather + rank (10 = one SearchApi page/credit).
+const MAX_RESULTS = 10;
 
 function buildQuery(profile: ResumeProfile, params: SearchParams): string {
   let base: string;

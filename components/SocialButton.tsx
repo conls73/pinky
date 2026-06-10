@@ -21,7 +21,7 @@ export function SocialButton({
         {icon === "google" ? (
           <GoogleIcon size={20} />
         ) : (
-          <FontAwesome name="apple" size={20} color="#000" />
+          <FontAwesome name="apple" size={20} color={colors.ink} />
         )}
       </View>
       <Text style={styles.label}>{label}</Text>
@@ -32,19 +32,20 @@ export function SocialButton({
 const styles = StyleSheet.create({
   btn: {
     backgroundColor: colors.white,
-    borderRadius: 28,
-    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: 13,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
   },
-  pressed: { opacity: 0.85 },
+  pressed: { backgroundColor: colors.surface },
   icon: { marginRight: 12, width: 20, alignItems: "center" },
   label: {
-    color: colors.black,
+    color: colors.ink,
     fontSize: 14,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    fontWeight: "600",
   },
 });

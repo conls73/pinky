@@ -6,7 +6,7 @@ import { Field } from "@/components/Field";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
 import { SocialButton } from "@/components/SocialButton";
-import { colors } from "@/theme/colors";
+import { cardShadow, colors } from "@/theme/colors";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -17,23 +17,26 @@ export default function LoginScreen() {
   const enter = () => router.replace("/home");
 
   return (
-    <Screen>
+    <Screen centered>
       <View style={styles.logoBadge}>
         <Image source={require("../assets/logo.png")} style={styles.logo} />
       </View>
       <Text style={styles.brand}>Pinky</Text>
-      <Text style={styles.title}>Log in</Text>
+      <Text style={styles.title}>Welcome back</Text>
+      <Text style={styles.subtitle}>Sign in to find jobs near you.</Text>
 
       <Field
         value={email}
         onChangeText={setEmail}
-        placeholder="Username or Email"
+        label="Email"
+        placeholder="you@example.com"
         keyboardType="email-address"
       />
       <Field
         value={password}
         onChangeText={setPassword}
-        placeholder="Password"
+        label="Password"
+        placeholder="Your password"
         secure
       />
 
@@ -41,29 +44,25 @@ export default function LoginScreen() {
         <Text style={styles.forgot}>Forgot password?</Text>
       </Pressable>
 
-      <PrimaryButton label="LOG IN" onPress={enter} />
+      <PrimaryButton label="Log in" onPress={enter} />
 
       <Divider label="Or" />
 
-      <SocialButton
-        label="LOG IN WITH GOOGLE"
-        icon="google"
-        onPress={enter}
-      />
-      <SocialButton label="LOG IN WITH APPLE" icon="apple" onPress={enter} />
+      <SocialButton label="Continue with Google" icon="google" onPress={enter} />
+      <SocialButton label="Continue with Apple" icon="apple" onPress={enter} />
 
       {/* Bypass — skip auth for now and go straight into the app */}
       <Pressable
         onPress={enter}
         style={({ pressed }) => [styles.skip, pressed && { opacity: 0.7 }]}
       >
-        <Text style={styles.skipText}>Skip for now →</Text>
+        <Text style={styles.skipText}>Continue without an account →</Text>
       </Pressable>
 
       <View style={styles.footerRow}>
         <Text style={styles.footerMuted}>New to Pinky? </Text>
         <Pressable onPress={enter} hitSlop={6}>
-          <Text style={styles.footerLink}>Sign up now.</Text>
+          <Text style={styles.footerLink}>Create an account</Text>
         </Pressable>
       </View>
     </Screen>
@@ -72,60 +71,63 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   logoBadge: {
-    width: 100,
-    height: 100,
-    borderRadius: 28,
+    width: 88,
+    height: 88,
+    borderRadius: 24,
     backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    shadowColor: colors.pinkDeep,
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
+    ...cardShadow,
   },
   logo: {
-    width: 82,
-    height: 82,
+    width: 72,
+    height: 72,
     resizeMode: "contain",
   },
   brand: {
     alignSelf: "center",
-    color: colors.white,
-    fontSize: 22,
-    fontWeight: "900",
-    letterSpacing: 1,
-    marginTop: 4,
-    marginBottom: 8,
+    color: colors.accent,
+    fontSize: 20,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+    marginTop: 10,
   },
   title: {
     alignSelf: "center",
-    color: colors.white,
-    fontSize: 28,
-    fontWeight: "800",
+    color: colors.ink,
+    fontSize: 24,
+    fontWeight: "700",
+    marginTop: 16,
+  },
+  subtitle: {
+    alignSelf: "center",
+    color: colors.muted,
+    fontSize: 15,
+    marginTop: 4,
     marginBottom: 24,
   },
-  forgotWrap: { alignSelf: "center", marginBottom: 20 },
-  forgot: { color: colors.white, fontWeight: "700", fontSize: 13 },
+  forgotWrap: { alignSelf: "flex-end", marginBottom: 20 },
+  forgot: { color: colors.accent, fontWeight: "600", fontSize: 13 },
   skip: {
     alignSelf: "center",
-    marginTop: 18,
+    marginTop: 16,
     paddingVertical: 8,
     paddingHorizontal: 16,
   },
   skipText: {
-    color: colors.white,
-    fontWeight: "800",
-    fontSize: 15,
-    letterSpacing: 0.5,
+    color: colors.muted,
+    fontWeight: "600",
+    fontSize: 14,
   },
   footerRow: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 18,
+    marginTop: 14,
   },
-  footerMuted: { color: colors.white, opacity: 0.85, fontSize: 13 },
-  footerLink: { color: colors.white, fontWeight: "800", fontSize: 13 },
+  footerMuted: { color: colors.muted, fontSize: 13 },
+  footerLink: { color: colors.accent, fontWeight: "600", fontSize: 13 },
 });

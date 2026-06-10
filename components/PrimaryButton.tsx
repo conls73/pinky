@@ -25,13 +25,16 @@ export function PrimaryButton({
       style={({ pressed }) => [
         styles.btn,
         pressed && styles.pressed,
-        isDisabled && styles.disabled,
+        isDisabled && !loading && styles.disabled,
+        loading && styles.loading,
       ]}
     >
       {loading ? (
         <ActivityIndicator color={colors.white} />
       ) : (
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.label, isDisabled && styles.labelDisabled]}>
+          {label}
+        </Text>
       )}
     </Pressable>
   );
@@ -39,23 +42,19 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   btn: {
-    backgroundColor: colors.pinkDeep,
-    borderRadius: 28,
-    paddingVertical: 16,
+    backgroundColor: colors.accent,
+    borderRadius: 12,
+    paddingVertical: 15,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.pinkDeep,
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
   },
-  pressed: { backgroundColor: colors.pinkDark, transform: [{ scale: 0.99 }] },
-  disabled: { opacity: 0.55 },
+  pressed: { backgroundColor: colors.accentPressed },
+  disabled: { backgroundColor: colors.border },
+  loading: { opacity: 0.85 },
   label: {
     color: colors.white,
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 1,
+    fontSize: 15,
+    fontWeight: "600",
   },
+  labelDisabled: { color: colors.muted },
 });

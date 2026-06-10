@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import {
   Pressable,
@@ -8,7 +9,7 @@ import {
   View,
 } from "react-native";
 import { US_CITIES } from "@/lib/usCities";
-import { colors } from "@/theme/colors";
+import { cardShadow, colors } from "@/theme/colors";
 import { noOutline } from "@/theme/webStyle";
 
 export function CitySearch({
@@ -47,25 +48,30 @@ export function CitySearch({
     <View>
       {/* Remote toggle */}
       <View style={styles.toggleRow}>
-        <Text style={styles.toggleLabel}>Work remotely</Text>
+        <Text style={styles.toggleLabel}>Open to remote work</Text>
         <Switch
           value={remote}
           onValueChange={onToggleRemote}
-          trackColor={{ false: "#ffffff66", true: colors.pinkDeep }}
+          trackColor={{ false: colors.border, true: colors.accent }}
           thumbColor={colors.white}
-          ios_backgroundColor="#ffffff66"
+          ios_backgroundColor={colors.border}
         />
       </View>
 
       {remote ? (
         <View style={styles.remoteNote}>
+          <Ionicons
+            name="information-circle-outline"
+            size={16}
+            color={colors.muted}
+          />
           <Text style={styles.remoteNoteText}>
-            Searching remote jobs — no location needed.
+            Searching remote roles — no location needed.
           </Text>
         </View>
       ) : (
         <View style={styles.searchWrap}>
-          <View style={styles.inputRow}>
+          <View style={[styles.inputRow, focused && styles.inputRowFocused]}>
             <TextInput
               style={[styles.input, noOutline]}
               value={query}
@@ -121,48 +127,52 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 12,
   },
-  toggleLabel: { color: colors.white, fontSize: 15, fontWeight: "600" },
+  toggleLabel: { color: colors.ink, fontSize: 15, fontWeight: "500" },
   remoteNote: {
-    backgroundColor: "#ffffff22",
-    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
     padding: 14,
   },
-  remoteNoteText: { color: colors.white, fontSize: 14, fontWeight: "600" },
+  remoteNoteText: { color: colors.muted, fontSize: 14 },
   searchWrap: { position: "relative" },
   inputRow: {
     backgroundColor: colors.white,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: colors.pinkSoft,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
   },
+  inputRowFocused: { borderColor: colors.accent },
   input: {
     flex: 1,
-    paddingVertical: 15,
+    paddingVertical: 14,
     fontSize: 15,
-    color: colors.black,
+    color: colors.ink,
   },
-  clear: { color: colors.black, fontWeight: "700", fontSize: 13 },
+  clear: { color: colors.accent, fontWeight: "600", fontSize: 13 },
   suggestions: {
     backgroundColor: colors.white,
-    borderRadius: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
     marginTop: 6,
     overflow: "hidden",
-    shadowColor: colors.pinkDeep,
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    ...cardShadow,
   },
   suggestion: {
     paddingVertical: 13,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F2E2EC",
+    borderBottomColor: colors.border,
   },
-  suggestionPressed: { backgroundColor: colors.pinkBg },
-  suggestionText: { color: colors.black, fontSize: 15 },
+  suggestionPressed: { backgroundColor: colors.accentSoft },
+  suggestionText: { color: colors.ink, fontSize: 15 },
 });

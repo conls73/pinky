@@ -21,20 +21,22 @@ export function StepHeader({
     <View style={styles.wrap}>
       <View style={styles.topRow}>
         {canGoBack ? (
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Ionicons name="chevron-back" size={26} color={colors.white} />
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={8}
+            style={({ pressed }) => [styles.back, pressed && styles.backPressed]}
+          >
+            <Ionicons name="chevron-back" size={20} color={colors.ink} />
           </Pressable>
         ) : (
-          <View style={{ width: 26 }} />
+          <View style={styles.backSpacer} />
         )}
         {step ? (
           <Text style={styles.step}>
             Step {step} of {total}
           </Text>
-        ) : (
-          <View style={{ width: 26 }} />
-        )}
-        <View style={{ width: 26 }} />
+        ) : null}
+        <View style={styles.backSpacer} />
       </View>
       <Text style={styles.title}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
@@ -48,22 +50,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 14,
+    marginBottom: 16,
   },
+  back: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  backPressed: { backgroundColor: colors.surface },
+  backSpacer: { width: 36 },
   step: {
-    color: colors.white,
-    fontWeight: "700",
+    color: colors.muted,
+    fontWeight: "600",
     fontSize: 13,
-    letterSpacing: 0.5,
   },
   title: {
-    color: colors.white,
-    fontSize: 26,
-    fontWeight: "800",
+    color: colors.ink,
+    fontSize: 24,
+    fontWeight: "700",
   },
   subtitle: {
-    color: colors.white,
-    opacity: 0.9,
+    color: colors.muted,
     fontSize: 15,
     marginTop: 6,
     lineHeight: 21,

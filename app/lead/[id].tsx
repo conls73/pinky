@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
   Linking,
@@ -15,12 +15,11 @@ import { Screen } from "@/components/Screen";
 import { StepHeader } from "@/components/StepHeader";
 import { postJson } from "@/lib/api";
 import { usePinky } from "@/store/usePinky";
-import { colors } from "@/theme/colors";
+import { cardShadow, colors } from "@/theme/colors";
 import { CoverLetter } from "@/types";
 
 export default function LeadDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const { leads, profile } = usePinky();
   const lead = leads.find((l) => l.id === id);
 
@@ -29,14 +28,8 @@ export default function LeadDetailScreen() {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!lead) {
-    return (
-      <Screen>
-        <StepHeader title="Job not found" canGoBack />
-        <PrimaryButton label="BACK TO JOBS" onPress={() => router.back()} />
-      </Screen>
-    );
-  }
+  // Stale or foreign id (e.g. an old deep link) — send the user somewhere useful.
+  if (!lead) return <Redirect href={leads.length ? "/results" : "/home"} />;
 
   function openListing() {
     if (lead?.url) Linking.openURL(lead.url);
@@ -79,15 +72,26 @@ export default function LeadDetailScreen() {
         </View>
         {lead.company ? <Text style={styles.company}>{lead.company}</Text> : null}
         {lead.location ? (
-          <Text style={styles.meta}>📍 {lead.location}</Text>
+          <View style={styles.metaRow}>
+            <Ionicons name="location-outline" size={15} color={colors.muted} />
+            <Text style={styles.meta}>{lead.location}</Text>
+          </View>
         ) : null}
-        {lead.pay ? <Text style={styles.meta}>💵 {lead.pay}</Text> : null}
+        {lead.pay ? (
+          <View style={styles.metaRow}>
+            <Ionicons name="cash-outline" size={15} color={colors.muted} />
+            <Text style={styles.meta}>{lead.pay}</Text>
+          </View>
+        ) : null}
         {lead.postedDate ? (
-          <Text style={styles.meta}>🕒 {lead.postedDate}</Text>
+          <View style={styles.metaRow}>
+            <Ionicons name="time-outline" size={15} color={colors.muted} />
+            <Text style={styles.meta}>{lead.postedDate}</Text>
+          </View>
         ) : null}
 
         <View style={styles.whyBox}>
-          <Text style={styles.whyLabel}>Why it fits you</Text>
+          <Text style={styles.whyLabel}>Why this fits you</Text>
           <Text style={styles.why}>{lead.whyItFits}</Text>
         </View>
 
@@ -106,13 +110,18 @@ export default function LeadDetailScreen() {
 
         {lead.url ? (
           <View style={styles.linkRow}>
-            <Ionicons name="open-outline" size={16} color={colors.pinkDeep} />
-            <Text style={styles.link}>Tap anywhere to open the listing</Text>
+            <Ionicons name="open-outline" size={16} color={colors.accent} />
+            <Text style={styles.link}>Open original listing</Text>
           </View>
         ) : null}
       </Pressable>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? (
+        <View style={styles.errorRow}>
+          <Ionicons name="alert-circle-outline" size={16} color={colors.error} />
+          <Text style={styles.error}>{error}</Text>
+        </View>
+      ) : null}
 
       {letter ? (
         <View style={styles.letterCard}>
@@ -131,12 +140,13 @@ export default function LeadDetailScreen() {
             <Text style={styles.letterBody}>{letter}</Text>
           </ScrollView>
           <Pressable onPress={generate} style={styles.regen} hitSlop={8}>
-            <Text style={styles.regenText}>↻ Rewrite</Text>
+            <Ionicons name="refresh-outline" size={15} color={colors.accent} />
+            <Text style={styles.regenText}>Rewrite</Text>
           </Pressable>
         </View>
       ) : (
         <PrimaryButton
-          label={busy ? "WRITING…" : "GENERATE COVER LETTER"}
+          label={busy ? "Writing…" : "Generate cover letter"}
           loading={busy}
           onPress={generate}
         />
@@ -148,55 +158,90 @@ export default function LeadDetailScreen() {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.white,
-    borderRadius: 18,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: 18,
     marginBottom: 16,
+    ...cardShadow,
   },
   sourceBadge: {
     alignSelf: "flex-start",
-    backgroundColor: colors.pinkBg,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
     marginBottom: 10,
   },
-  sourceText: { color: colors.black, fontWeight: "700", fontSize: 11 },
-  company: { color: colors.black, fontSize: 16, fontWeight: "700", marginBottom: 4 },
-  meta: { color: colors.black, fontSize: 13, marginTop: 2 },
-  whyBox: {
-    backgroundColor: colors.pink,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 12,
+  sourceText: { color: colors.muted, fontWeight: "600", fontSize: 11 },
+  company: {
+    color: colors.ink,
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 6,
   },
-  whyLabel: { color: colors.white, fontWeight: "800", fontSize: 11, marginBottom: 4 },
-  why: { color: colors.white, fontSize: 13, lineHeight: 19 },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+  },
+  meta: { color: colors.muted, fontSize: 13 },
+  whyBox: {
+    backgroundColor: colors.accentSoft,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.accent,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 14,
+  },
+  whyLabel: {
+    color: colors.accentPressed,
+    fontWeight: "700",
+    fontSize: 11,
+    letterSpacing: 0.3,
+    marginBottom: 4,
+  },
+  why: { color: colors.inkSecondary, fontSize: 13, lineHeight: 19 },
   descLabel: {
-    color: colors.black,
-    fontWeight: "800",
+    color: colors.muted,
+    fontWeight: "600",
     fontSize: 12,
     marginTop: 14,
     marginBottom: 6,
   },
   descScroll: {
     maxHeight: 220,
-    backgroundColor: "#FBF2F7",
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
     padding: 12,
   },
-  snippet: { color: colors.black, fontSize: 13, lineHeight: 20 },
+  snippet: { color: colors.inkSecondary, fontSize: 13, lineHeight: 20 },
   linkRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginTop: 12,
+    marginTop: 14,
   },
-  link: { color: colors.black, fontWeight: "700", fontSize: 13 },
-  error: { color: colors.white, fontSize: 13, marginBottom: 12, textAlign: "center" },
+  link: { color: colors.accent, fontWeight: "600", fontSize: 13 },
+  errorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+  },
+  error: { flex: 1, color: colors.error, fontSize: 13 },
   letterCard: {
     backgroundColor: colors.white,
-    borderRadius: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: 16,
+    ...cardShadow,
   },
   letterHeader: {
     flexDirection: "row",
@@ -204,19 +249,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-  letterTitle: { color: colors.black, fontWeight: "800", fontSize: 14, flex: 1 },
+  letterTitle: { color: colors.ink, fontWeight: "700", fontSize: 14, flex: 1 },
   copyBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: colors.pinkDeep,
+    backgroundColor: colors.accent,
     borderRadius: 14,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  copyText: { color: colors.white, fontWeight: "700", fontSize: 11 },
+  copyText: { color: colors.white, fontWeight: "600", fontSize: 11 },
   letterScroll: { maxHeight: 340 },
-  letterBody: { color: colors.black, fontSize: 14, lineHeight: 22 },
-  regen: { alignSelf: "center", padding: 10, marginTop: 4 },
-  regenText: { color: colors.pinkDeep, fontWeight: "700" },
+  letterBody: { color: colors.inkSecondary, fontSize: 14, lineHeight: 22 },
+  regen: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "center",
+    padding: 10,
+    marginTop: 4,
+  },
+  regenText: { color: colors.accent, fontWeight: "600", fontSize: 13 },
 });

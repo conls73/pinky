@@ -20,12 +20,12 @@ const styles = StyleSheet.create({
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.white,
-    opacity: 0.6,
+    backgroundColor: colors.border,
   },
   label: {
     marginHorizontal: 12,
-    color: colors.white,
-    fontWeight: "600",
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: "500",
   },
 });

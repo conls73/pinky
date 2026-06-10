@@ -1,14 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { Redirect, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
+  Animated,
+  Easing,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { LeadCard } from "@/components/LeadCard";
+import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
 import { StepHeader } from "@/components/StepHeader";
 import { postJson } from "@/lib/api";
@@ -18,10 +20,51 @@ import { RankedLead } from "@/types";
 
 const RADII = [5, 10, 25, 50];
 
+function SkeletonCards() {
+  const pulse = useRef(new Animated.Value(0.5)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.5,
+          duration: 700,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+
+  return (
+    <View>
+      {[0, 1, 2].map((i) => (
+        <Animated.View key={i} style={[styles.skeleton, { opacity: pulse }]}>
+          <View style={[styles.skeletonLine, { width: "70%" }]} />
+          <View style={[styles.skeletonLine, { width: "45%" }]} />
+          <View style={[styles.skeletonBlock]} />
+        </Animated.View>
+      ))}
+    </View>
+  );
+}
+
 export default function ResultsScreen() {
   const router = useRouter();
-  const { profile, leads, params, setParams, setLeads } = usePinky();
+  const { profile, leads, params, setParams, setLeads, hasSearched } =
+    usePinky();
   const [busy, setBusy] = useState(false);
+
+  // Deep-link / fresh-session guard: nothing to show until a search has run.
+  if (!hasSearched) return <Redirect href="/home" />;
+
   const isSample = leads.some((l) => l.id.startsWith("sample-"));
   const area = [params.city, params.state].filter(Boolean).join(", ");
   const subtitle = params.remote
@@ -49,7 +92,10 @@ export default function ResultsScreen() {
 
   return (
     <Screen>
-      <StepHeader title={`${leads.length} jobs found`} subtitle={subtitle} />
+      <StepHeader
+        title={`${leads.length} ${leads.length === 1 ? "job" : "jobs"} found`}
+        subtitle={subtitle}
+      />
 
       {!params.remote && (
         <>
@@ -61,6 +107,7 @@ export default function ResultsScreen() {
                 <Pressable
                   key={r}
                   onPress={() => applyRadius(r)}
+                  disabled={busy}
                   style={[styles.chip, active && styles.chipActive]}
                 >
                   <Text
@@ -77,23 +124,27 @@ export default function ResultsScreen() {
 
       {isSample ? (
         <View style={styles.banner}>
-          <Ionicons name="information-circle" size={18} color={colors.pinkDeep} />
+          <Ionicons name="information-circle" size={18} color={colors.info} />
           <Text style={styles.bannerText}>
-            Showing sample jobs. Add a SEARCHAPI_KEY in .env for live Google
+            Showing sample listings. Add a SEARCHAPI_KEY to enable live Google
             Jobs results.
           </Text>
         </View>
       ) : null}
 
       {busy ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={colors.white} />
-          <Text style={styles.loadingText}>Updating jobs…</Text>
-        </View>
+        <SkeletonCards />
       ) : leads.length === 0 ? (
-        <Text style={styles.empty}>
-          No jobs yet. Go back and try a wider area or different preferences.
-        </Text>
+        <View style={styles.empty}>
+          <Ionicons name="search-outline" size={36} color={colors.placeholder} />
+          <Text style={styles.emptyTitle}>No jobs matched</Text>
+          <Text style={styles.emptyBody}>
+            Try a wider radius, a different city, or broader preferences.
+          </Text>
+          <View style={styles.emptyAction}>
+            <PrimaryButton label="Adjust search" onPress={() => router.back()} />
+          </View>
+        </View>
       ) : (
         leads.map((lead) => (
           <LeadCard
@@ -109,39 +160,63 @@ export default function ResultsScreen() {
 
 const styles = StyleSheet.create({
   filterLabel: {
-    color: colors.white,
-    fontWeight: "800",
+    color: colors.muted,
+    fontWeight: "600",
     fontSize: 13,
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  chips: { flexDirection: "row", gap: 10, marginBottom: 18 },
+  chips: { flexDirection: "row", gap: 8, marginBottom: 16 },
   chip: {
     flex: 1,
-    backgroundColor: colors.white,
-    borderRadius: 14,
-    paddingVertical: 10,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingVertical: 9,
     alignItems: "center",
   },
-  chipActive: { backgroundColor: colors.pinkDeep },
-  chipText: { color: colors.black, fontWeight: "700" },
+  chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  chipText: { color: colors.inkSecondary, fontWeight: "600", fontSize: 13 },
   chipTextActive: { color: colors.white },
   banner: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: colors.white,
-    borderRadius: 12,
+    backgroundColor: colors.infoBg,
+    borderWidth: 1,
+    borderColor: colors.infoBorder,
+    borderRadius: 10,
     padding: 12,
     marginBottom: 16,
   },
-  bannerText: { flex: 1, color: colors.ink, fontSize: 12, lineHeight: 17 },
-  loading: { alignItems: "center", paddingVertical: 30, gap: 10 },
-  loadingText: { color: colors.white, fontWeight: "600" },
-  empty: {
-    color: colors.white,
-    textAlign: "center",
-    fontSize: 14,
-    marginTop: 20,
-    lineHeight: 21,
+  bannerText: { flex: 1, color: colors.info, fontSize: 12, lineHeight: 17 },
+  skeleton: {
+    backgroundColor: colors.white,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 16,
+    marginBottom: 12,
   },
+  skeletonLine: {
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.surface,
+    marginBottom: 10,
+  },
+  skeletonBlock: {
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+  },
+  empty: { alignItems: "center", paddingVertical: 32, gap: 8 },
+  emptyTitle: { color: colors.ink, fontSize: 17, fontWeight: "700" },
+  emptyBody: {
+    color: colors.muted,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+    maxWidth: 300,
+  },
+  emptyAction: { alignSelf: "stretch", marginTop: 12 },
 });

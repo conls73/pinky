@@ -1,4 +1,3 @@
-import { LinearGradient } from "expo-linear-gradient";
 import { ReactNode } from "react";
 import {
   KeyboardAvoidingView,
@@ -8,25 +7,26 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { bgGradient } from "@/theme/colors";
+import { colors } from "@/theme/colors";
 
 /**
- * Pink gradient background + safe area, with content centered and width-capped
- * so it reads well on desktop web and fills narrow mobile screens.
+ * White page background + safe area, with content width-capped so it reads
+ * well on desktop web and fills narrow mobile screens. Long pages top-align;
+ * pass `centered` for short screens like login.
  */
 export function Screen({
   children,
   scroll = true,
+  centered = false,
 }: {
   children: ReactNode;
   scroll?: boolean;
+  centered?: boolean;
 }) {
-  const inner = (
-    <View style={styles.capped}>{children}</View>
-  );
+  const inner = <View style={styles.capped}>{children}</View>;
 
   return (
-    <LinearGradient colors={bgGradient} style={styles.fill}>
+    <View style={styles.page}>
       <SafeAreaView style={styles.fill} edges={["top", "bottom"]}>
         <KeyboardAvoidingView
           style={styles.fill}
@@ -34,37 +34,38 @@ export function Screen({
         >
           {scroll ? (
             <ScrollView
-              contentContainerStyle={styles.scrollContent}
+              contentContainerStyle={[
+                styles.scrollContent,
+                centered && styles.centeredContent,
+              ]}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
               {inner}
             </ScrollView>
           ) : (
-            <View style={styles.center}>{inner}</View>
+            <View style={[styles.scrollContent, styles.centeredContent]}>
+              {inner}
+            </View>
           )}
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  page: { flex: 1, backgroundColor: colors.background },
   scrollContent: {
     flexGrow: 1,
     alignItems: "center",
-    justifyContent: "center",
     padding: 24,
+    paddingTop: 32,
   },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-  },
+  centeredContent: { justifyContent: "center" },
   capped: {
     width: "100%",
-    maxWidth: 460,
+    maxWidth: 480,
   },
 });
