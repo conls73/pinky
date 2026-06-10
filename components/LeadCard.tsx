@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { SourceBadge } from "@/components/SourceBadge";
 import { cardShadow, colors } from "@/theme/colors";
 import { RankedLead } from "@/types";
 
@@ -22,9 +23,7 @@ export function LeadCard({
       {lead.company ? <Text style={styles.company}>{lead.company}</Text> : null}
 
       <View style={styles.metaRow}>
-        <View style={styles.sourceBadge}>
-          <Text style={styles.sourceText}>{lead.source}</Text>
-        </View>
+        <SourceBadge source={lead.source} />
         {lead.location ? (
           <View style={styles.metaItem}>
             <Ionicons name="location-outline" size={14} color={colors.muted} />
@@ -76,15 +75,6 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 10,
   },
-  sourceBadge: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  sourceText: { color: colors.muted, fontWeight: "600", fontSize: 11 },
   metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   meta: { color: colors.muted, fontSize: 13 },
   whyBox: {

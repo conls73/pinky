@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
+import { SourceBadge } from "@/components/SourceBadge";
 import { StepHeader } from "@/components/StepHeader";
 import { postJson } from "@/lib/api";
 import { usePinky } from "@/store/usePinky";
@@ -67,8 +68,8 @@ export default function LeadDetailScreen() {
         onPress={openListing}
         style={({ pressed }) => [styles.card, pressed && { opacity: 0.96 }]}
       >
-        <View style={styles.sourceBadge}>
-          <Text style={styles.sourceText}>{lead.source}</Text>
+        <View style={styles.badgeRow}>
+          <SourceBadge source={lead.source} />
         </View>
         {lead.company ? <Text style={styles.company}>{lead.company}</Text> : null}
         {lead.location ? (
@@ -111,7 +112,11 @@ export default function LeadDetailScreen() {
         {lead.url ? (
           <View style={styles.linkRow}>
             <Ionicons name="open-outline" size={16} color={colors.accent} />
-            <Text style={styles.link}>Open original listing</Text>
+            <Text style={styles.link}>
+              {lead.source === "Craigslist" || lead.source === "RemoteOK"
+                ? `Open listing on ${lead.source}`
+                : "Open original listing"}
+            </Text>
           </View>
         ) : null}
       </Pressable>
@@ -165,17 +170,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     ...cardShadow,
   },
-  sourceBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    marginBottom: 10,
-  },
-  sourceText: { color: colors.muted, fontWeight: "600", fontSize: 11 },
+  badgeRow: { marginBottom: 10 },
   company: {
     color: colors.ink,
     fontSize: 16,
