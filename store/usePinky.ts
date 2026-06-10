@@ -1,7 +1,13 @@
 import { Platform } from "react-native";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { emptyProfile, RankedLead, ResumeProfile, SearchParams } from "@/types";
+import {
+  ALL_OPPORTUNITY_TYPES,
+  emptyProfile,
+  RankedLead,
+  ResumeProfile,
+  SearchParams,
+} from "@/types";
 
 interface PinkyState {
   resumeFileName?: string;
@@ -25,6 +31,7 @@ const defaultParams: SearchParams = {
   remote: false,
   query: "",
   preferencesText: "",
+  opportunityTypes: [...ALL_OPPORTUNITY_TYPES],
 };
 
 // Persist to localStorage on web so a browser refresh keeps the session.

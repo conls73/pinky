@@ -68,9 +68,11 @@ export default function LeadDetailScreen() {
         onPress={openListing}
         style={({ pressed }) => [styles.card, pressed && { opacity: 0.96 }]}
       >
-        <View style={styles.badgeRow}>
-          <SourceBadge source={lead.source} />
-        </View>
+        {lead.source !== "Google Jobs" ? (
+          <View style={styles.badgeRow}>
+            <SourceBadge source={lead.source} />
+          </View>
+        ) : null}
         {lead.company ? <Text style={styles.company}>{lead.company}</Text> : null}
         {lead.location ? (
           <View style={styles.metaRow}>

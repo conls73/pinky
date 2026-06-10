@@ -25,6 +25,15 @@ export interface ResumeProfile {
   possibleMatches: string[];
 }
 
+/** Kinds of opportunity the user wants mixed into results. */
+export type OpportunityType = "job" | "gig" | "contractor";
+
+export const ALL_OPPORTUNITY_TYPES: OpportunityType[] = [
+  "job",
+  "gig",
+  "contractor",
+];
+
 export interface SearchParams {
   city: string;
   state: string;
@@ -34,12 +43,15 @@ export interface SearchParams {
   /** Direct search keywords, e.g. "construction laborer". Takes priority over resume/preferences. */
   query?: string;
   preferencesText?: string;
+  /** Which opportunity kinds to include. Empty/undefined = all (broad mix). */
+  opportunityTypes?: OpportunityType[];
 }
 
 export type JobSourceName =
   | "Google Jobs"
   | "Craigslist"
   | "RemoteOK"
+  | "Nextdoor"
   | "Thumbtack"
   | "Indeed"
   | "LinkedIn"

@@ -1,10 +1,29 @@
 import { aggregate, configuredSources } from "@/lib/jobSources";
 import { openaiJSON } from "@/lib/openai";
 import { sampleLeads } from "@/lib/sampleLeads";
-import { Lead, RankedLead, ResumeProfile, SearchParams } from "@/types";
+import {
+  ALL_OPPORTUNITY_TYPES,
+  Lead,
+  OpportunityType,
+  RankedLead,
+  ResumeProfile,
+  SearchParams,
+} from "@/types";
 
-// Soft cap on how many live jobs to gather + rank (10 = one SearchApi page/credit).
-const MAX_RESULTS = 10;
+// Soft cap on how many live jobs to gather + rank (~100 = up to 10 SearchApi
+// pages/credits per search).
+const MAX_RESULTS = 100;
+
+// To stay within the serverless time budget, only the most promising leads get
+// the (slower) AI "why it fits" pass; the rest keep their heuristic ranking.
+const AI_RANK_CAP = 50;
+
+/** Selected opportunity types, normalized — empty/all both mean "broad mix". */
+function selectedTypes(params: SearchParams): OpportunityType[] {
+  const t = params.opportunityTypes ?? [];
+  if (t.length === 0 || t.length === ALL_OPPORTUNITY_TYPES.length) return [];
+  return t;
+}
 
 function buildQuery(profile: ResumeProfile, params: SearchParams): string {
   let base: string;
@@ -14,6 +33,14 @@ function buildQuery(profile: ResumeProfile, params: SearchParams): string {
   else if (profile.jobTitles.length) base = profile.jobTitles[0];
   else if (profile.possibleMatches.length) base = profile.possibleMatches[0];
   else base = "general labor";
+
+  // When the user narrows to a subset of opportunity types, bias the keywords.
+  // "job" carries no keyword (it's ordinary employment); gig/contractor do.
+  const typeWords = selectedTypes(params)
+    .filter((t) => t !== "job")
+    .map((t) => (t === "gig" ? "gig" : "contractor"));
+  if (typeWords.length) base = `${base} ${typeWords.join(" ")}`;
+
   return params.remote ? `${base} remote` : base;
 }
 
@@ -36,7 +63,7 @@ export async function POST(req: Request): Promise<Response> {
 
     let ranked: RankedLead[];
     try {
-      ranked = await rankWithOpenAI(profile, params, leads);
+      ranked = await rankLeads(profile, params, leads);
     } catch (err: any) {
       if (!err?.message?.includes("OPENAI_API_KEY")) {
         console.warn("[search] ranking fell back to heuristic:", err?.message);
@@ -57,6 +84,28 @@ export async function POST(req: Request): Promise<Response> {
       { status: 500 }
     );
   }
+}
+
+/**
+ * For small result sets, AI-rank everything. For large sets, AI-rank only the
+ * heuristic top slice (keeps the OpenAI call within the serverless time/cost
+ * budget) and keep the heuristic ranking for the tail.
+ */
+async function rankLeads(
+  profile: ResumeProfile,
+  params: SearchParams,
+  leads: Lead[]
+): Promise<RankedLead[]> {
+  if (leads.length <= AI_RANK_CAP) {
+    return rankWithOpenAI(profile, params, leads);
+  }
+  const pre = rankHeuristic(profile, leads); // sorted best-first
+  const aiTop = await rankWithOpenAI(
+    profile,
+    params,
+    pre.slice(0, AI_RANK_CAP)
+  );
+  return [...aiTop, ...pre.slice(AI_RANK_CAP)];
 }
 
 async function rankWithOpenAI(
@@ -89,7 +138,7 @@ string }] } sorted by score descending, including every lead id exactly once.`;
 
   const out = await openaiJSON<{
     ranked: Array<{ id: string; score: number; whyItFits: string }>;
-  }>(system, user, 3000);
+  }>(system, user, 6000);
 
   const byId = new Map((out.ranked ?? []).map((s) => [s.id, s]));
   return leads

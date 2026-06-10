@@ -2,7 +2,8 @@ import { Lead } from "@/types";
 import { JobSource } from "./types";
 
 /**
- * Placeholder sources for Thumbtack, Indeed, LinkedIn, and ZipRecruiter.
+ * Placeholder sources for Thumbtack, Indeed, LinkedIn, ZipRecruiter, and
+ * Nextdoor.
  *
  * These platforms have no open, scraping-friendly public API and have strict
  * terms of service. A production build needs their official/partner APIs (or a
@@ -27,3 +28,4 @@ export const thumbtack = makeStub("Thumbtack");
 export const indeed = makeStub("Indeed");
 export const linkedin = makeStub("LinkedIn");
 export const ziprecruiter = makeStub("ZipRecruiter");
+export const nextdoor = makeStub("Nextdoor");

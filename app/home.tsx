@@ -19,7 +19,18 @@ import { postJson } from "@/lib/api";
 import { usePinky } from "@/store/usePinky";
 import { colors } from "@/theme/colors";
 import { noOutline } from "@/theme/webStyle";
-import { RankedLead, ResumeProfile } from "@/types";
+import {
+  ALL_OPPORTUNITY_TYPES,
+  OpportunityType,
+  RankedLead,
+  ResumeProfile,
+} from "@/types";
+
+const OPPORTUNITY_LABELS: Record<OpportunityType, string> = {
+  job: "Jobs",
+  gig: "Gigs",
+  contractor: "Contract",
+};
 
 const RESUME_TYPES = [
   "application/pdf",
@@ -64,6 +75,11 @@ export default function HomeScreen() {
     setLeads,
   } = usePinky();
   const [query, setQuery] = useState(params.query ?? "");
+  const [oppTypes, setOppTypes] = useState<OpportunityType[]>(
+    params.opportunityTypes?.length
+      ? params.opportunityTypes
+      : [...ALL_OPPORTUNITY_TYPES]
+  );
   const [work, setWork] = useState(params.preferencesText ?? "");
   const [parsing, setParsing] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -108,10 +124,24 @@ export default function HomeScreen() {
 
   const canSearch = params.remote || params.city.trim().length > 0;
 
+  // Empty selection would mean "no opportunities" — treat it as the broad mix.
+  const effectiveTypes = oppTypes.length ? oppTypes : [...ALL_OPPORTUNITY_TYPES];
+
+  function toggleType(t: OpportunityType) {
+    setOppTypes((prev) =>
+      prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]
+    );
+  }
+
   async function getStarted() {
     setError(null);
-    const merged = { ...params, query, preferencesText: work };
-    setParams({ query, preferencesText: work });
+    const merged = {
+      ...params,
+      query,
+      preferencesText: work,
+      opportunityTypes: effectiveTypes,
+    };
+    setParams({ query, preferencesText: work, opportunityTypes: effectiveTypes });
     setSearching(true);
     try {
       const { leads } = await postJson<{ leads: RankedLead[] }>("/search", {
@@ -153,6 +183,31 @@ export default function HomeScreen() {
           returnKeyType="search"
           onSubmitEditing={() => canSearch && getStarted()}
         />
+      </View>
+
+      <Text style={[styles.label, styles.labelSmallSpaced]}>
+        Include a mix of
+      </Text>
+      <View style={styles.checkRow}>
+        {ALL_OPPORTUNITY_TYPES.map((t) => {
+          const on = oppTypes.includes(t);
+          return (
+            <Pressable
+              key={t}
+              onPress={() => toggleType(t)}
+              style={[styles.check, on && styles.checkOn]}
+            >
+              <Ionicons
+                name={on ? "checkbox" : "square-outline"}
+                size={18}
+                color={on ? colors.accent : colors.muted}
+              />
+              <Text style={[styles.checkText, on && styles.checkTextOn]}>
+                {OPPORTUNITY_LABELS[t]}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       <Text style={[styles.label, styles.labelSpaced]}>
@@ -276,6 +331,26 @@ const styles = StyleSheet.create({
   },
   optional: { color: colors.placeholder, fontWeight: "400" },
   labelSpaced: { marginTop: 28 },
+  labelSmallSpaced: { marginTop: 16 },
+  checkRow: { flexDirection: "row", gap: 8 },
+  check: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingVertical: 10,
+  },
+  checkOn: {
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft,
+  },
+  checkText: { color: colors.muted, fontWeight: "600", fontSize: 13 },
+  checkTextOn: { color: colors.ink },
   searchRow: {
     flexDirection: "row",
     alignItems: "center",

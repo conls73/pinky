@@ -19,6 +19,10 @@ function faviconUrl(domain: string): string {
 }
 
 export function SourceBadge({ source }: { source: JobSourceName }) {
+  // Google Jobs is just an aggregator that links out to employer sites, so its
+  // name is noise — show nothing and let the company name speak for itself.
+  if (source === "Google Jobs") return null;
+
   const domain = SOURCE_DOMAINS[source];
   return (
     <View style={styles.badge}>

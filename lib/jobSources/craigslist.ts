@@ -77,8 +77,20 @@ function citySite(city: string): string | null {
   return slug || null;
 }
 
-// Sections to search: jjj = all jobs, ggg = all gigs (construction/labor day work).
-const SECTIONS = ["jjj", "ggg"] as const;
+// Section codes: jjj = all jobs, ggg = all gigs (construction/labor day work).
+// Map the user's opportunity-type selection onto the sections to scrape.
+function sectionsFor(types: string[] | undefined): string[] {
+  const t = types ?? [];
+  const set = new Set<string>();
+  if (t.includes("job") || t.includes("contractor")) set.add("jjj");
+  if (t.includes("gig") || t.includes("contractor")) set.add("ggg");
+  // Empty/all selection → broad: both sections.
+  if (set.size === 0) {
+    set.add("jjj");
+    set.add("ggg");
+  }
+  return [...set];
+}
 
 export const craigslist: JobSource = {
   name: "Craigslist",
@@ -92,9 +104,10 @@ export const craigslist: JobSource = {
     const site = citySite(params.city);
     if (!site) return [];
 
-    const perSection = Math.max(3, Math.ceil(limit / SECTIONS.length));
+    const sections = sectionsFor(params.opportunityTypes);
+    const perSection = Math.max(3, Math.ceil(limit / sections.length));
     const batches = await Promise.all(
-      SECTIONS.map(async (section) => {
+      sections.map(async (section) => {
         try {
           return await searchSection(site, section, query, perSection);
         } catch (err: any) {

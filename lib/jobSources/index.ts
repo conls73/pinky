@@ -2,7 +2,7 @@ import { Lead } from "@/types";
 import { craigslist } from "./craigslist";
 import { googleJobs } from "./googleJobs";
 import { remoteok } from "./remoteok";
-import { indeed, linkedin, thumbtack, ziprecruiter } from "./stubs";
+import { indeed, linkedin, nextdoor, thumbtack, ziprecruiter } from "./stubs";
 import { JobSource, JobSourceQuery } from "./types";
 
 // Primary tier: official APIs. Google Jobs is the working reference; the rest
@@ -13,6 +13,7 @@ export const PRIMARY_SOURCES: JobSource[] = [
   indeed,
   linkedin,
   ziprecruiter,
+  nextdoor,
 ];
 
 // Fallback tier: keyless scrapers/public feeds. Only run when the primary
