@@ -1,14 +1,12 @@
 // Vercel serverless entry — forwards all requests to Expo's server bundle
 // (dist/server), which renders the web pages and runs the app/*+api.ts routes.
-const { createRequestHandler } = require("@expo/server/adapter/vercel");
+//
+// TEMPORARY DEBUG MODE: catches any crash and returns the real error + path
+// diagnostics in the response body, because Vercel's runtime logs aren't
+// accessible right now. Revert to the plain handler once the cause is found.
 const path = require("path");
 const fs = require("fs");
 
-// The bundler (@vercel/node) can rewrite __dirname during bundling, which
-// breaks a hard-coded "../dist/server" relative path at runtime and crashes
-// every route with FUNCTION_INVOCATION_FAILED. Resolve the server bundle by
-// probing the locations it can actually land in on Vercel (cwd is the lambda
-// root where includeFiles are copied) and pick the one that really exists.
 function resolveServerBuild() {
   const candidates = [
     path.join(process.cwd(), "dist/server"),
@@ -20,12 +18,63 @@ function resolveServerBuild() {
     try {
       if (fs.existsSync(path.join(dir, "_expo/routes.json"))) return dir;
     } catch {
-      // ignore and try the next candidate
+      // try next
     }
   }
-  // Nothing matched — fall back to the conventional path so the handler can
-  // surface a clear error instead of a silent crash.
-  return path.join(process.cwd(), "dist/server");
+  return null;
 }
 
-module.exports = createRequestHandler({ build: resolveServerBuild() });
+module.exports = async (req: any, res: any) => {
+  try {
+    const { createRequestHandler } = require("@expo/server/adapter/vercel");
+    const build = resolveServerBuild();
+    if (!build) {
+      throw new Error(
+        "dist/server not found. cwd=" +
+          process.cwd() +
+          " __dirname=" +
+          __dirname +
+          " listing=" +
+          safeList(process.cwd()) +
+          " distListing=" +
+          safeList(path.join(process.cwd(), "dist"))
+      );
+    }
+    const handler = createRequestHandler({ build });
+    return await handler(req, res);
+  } catch (err: any) {
+    try {
+      res.statusCode = 500;
+      res.setHeader("content-type", "text/plain; charset=utf-8");
+      res.end(
+        "PINKY_DEBUG\n" +
+          "message: " +
+          (err && err.message) +
+          "\n\nstack:\n" +
+          (err && err.stack ? err.stack : String(err)) +
+          "\n\ncwd=" +
+          process.cwd() +
+          "\n__dirname=" +
+          __dirname +
+          "\nresolvedBuild=" +
+          resolveServerBuild() +
+          "\ncwdListing=" +
+          safeList(process.cwd()) +
+          "\ndistListing=" +
+          safeList(path.join(process.cwd(), "dist")) +
+          "\ndistServerListing=" +
+          safeList(path.join(process.cwd(), "dist", "server"))
+      );
+    } catch {
+      // response already partially sent; nothing more we can do
+    }
+  }
+};
+
+function safeList(dir: string): string {
+  try {
+    return fs.readdirSync(dir).join(",");
+  } catch (e: any) {
+    return "<" + (e && e.code ? e.code : "err") + ">";
+  }
+}
