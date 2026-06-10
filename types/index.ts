@@ -31,11 +31,15 @@ export interface SearchParams {
   zip: string;
   radiusMiles: number;
   remote: boolean;
+  /** Direct search keywords, e.g. "construction laborer". Takes priority over resume/preferences. */
+  query?: string;
   preferencesText?: string;
 }
 
 export type JobSourceName =
   | "Google Jobs"
+  | "Craigslist"
+  | "RemoteOK"
   | "Thumbtack"
   | "Indeed"
   | "LinkedIn"

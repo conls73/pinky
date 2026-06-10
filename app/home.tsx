@@ -63,12 +63,14 @@ export default function HomeScreen() {
     setParams,
     setLeads,
   } = usePinky();
+  const [query, setQuery] = useState(params.query ?? "");
   const [work, setWork] = useState(params.preferencesText ?? "");
   const [parsing, setParsing] = useState(false);
   const [searching, setSearching] = useState(false);
   const [note, setNote] = useState<{ text: string; ok: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [workFocused, setWorkFocused] = useState(false);
+  const [queryFocused, setQueryFocused] = useState(false);
 
   async function pickAndParse() {
     setNote(null);
@@ -108,8 +110,8 @@ export default function HomeScreen() {
 
   async function getStarted() {
     setError(null);
-    const merged = { ...params, preferencesText: work };
-    setParams({ preferencesText: work });
+    const merged = { ...params, query, preferencesText: work };
+    setParams({ query, preferencesText: work });
     setSearching(true);
     try {
       const { leads } = await postJson<{ leads: RankedLead[] }>("/search", {
@@ -131,12 +133,31 @@ export default function HomeScreen() {
         <Image source={require("../assets/logo.png")} style={styles.logo} />
         <Text style={styles.title}>Find work near you</Text>
         <Text style={styles.tagline}>
-          Upload your resume, tell us what you're looking for, and get a ranked
-          list of local openings with tailored cover letters.
+          Search for the work you want and get a ranked list of local openings.
+          Adding a resume is optional — it sharpens the matches and powers
+          tailored cover letters.
         </Text>
       </View>
 
-      <Text style={styles.label}>Resume</Text>
+      <Text style={styles.label}>What job are you looking for?</Text>
+      <View style={[styles.searchRow, queryFocused && styles.searchRowFocused]}>
+        <Ionicons name="search-outline" size={18} color={colors.muted} />
+        <TextInput
+          style={[styles.searchInput, noOutline]}
+          value={query}
+          onChangeText={setQuery}
+          onFocus={() => setQueryFocused(true)}
+          onBlur={() => setQueryFocused(false)}
+          placeholder="e.g. construction laborer, warehouse, delivery…"
+          placeholderTextColor={colors.placeholder}
+          returnKeyType="search"
+          onSubmitEditing={() => canSearch && getStarted()}
+        />
+      </View>
+
+      <Text style={[styles.label, styles.labelSpaced]}>
+        Resume <Text style={styles.optional}>(optional)</Text>
+      </Text>
       <Pressable
         onPress={pickAndParse}
         disabled={parsing}
@@ -151,7 +172,9 @@ export default function HomeScreen() {
           {resumeFileName ?? "Upload your resume"}
         </Text>
         <Text style={styles.dropHint}>
-          {parsing ? "Reading your resume…" : "PDF, Word document, or text file"}
+          {parsing
+            ? "Reading your resume…"
+            : "PDF, Word document, or text file — improves ranking and cover letters"}
         </Text>
       </Pressable>
       {note ? (
@@ -173,7 +196,7 @@ export default function HomeScreen() {
       ) : null}
 
       <Text style={[styles.label, styles.labelSpaced]}>
-        What kind of work are you looking for?{" "}
+        Anything else about the work you want?{" "}
         <Text style={styles.optional}>(optional)</Text>
       </Text>
       <TextInput
@@ -253,6 +276,23 @@ const styles = StyleSheet.create({
   },
   optional: { color: colors.placeholder, fontWeight: "400" },
   labelSpaced: { marginTop: 28 },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 14,
+  },
+  searchRowFocused: { borderColor: colors.accent },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: colors.ink,
+  },
   drop: {
     backgroundColor: colors.white,
     borderRadius: 14,

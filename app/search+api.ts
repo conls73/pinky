@@ -8,7 +8,9 @@ const MAX_RESULTS = 10;
 
 function buildQuery(profile: ResumeProfile, params: SearchParams): string {
   let base: string;
-  if (params.preferencesText?.trim()) base = params.preferencesText.trim();
+  // Explicit search keywords win; resume/preferences fill in when absent.
+  if (params.query?.trim()) base = params.query.trim();
+  else if (params.preferencesText?.trim()) base = params.preferencesText.trim();
   else if (profile.jobTitles.length) base = profile.jobTitles[0];
   else if (profile.possibleMatches.length) base = profile.possibleMatches[0];
   else base = "general labor";
@@ -23,7 +25,11 @@ export async function POST(req: Request): Promise<Response> {
     };
 
     const query = buildQuery(profile, params);
-    const live = await aggregate({ query, params, limit: MAX_RESULTS });
+    const { leads: live, usedFallback } = await aggregate({
+      query,
+      params,
+      limit: MAX_RESULTS,
+    });
 
     const usedSampleData = live.length === 0;
     const leads = usedSampleData ? sampleLeads(profile, params) : live;
@@ -41,6 +47,7 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({
       leads: ranked,
       usedSampleData,
+      usedFallback,
       activeSources: configuredSources().map((s) => s.name),
     });
   } catch (err: any) {

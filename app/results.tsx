@@ -66,6 +66,9 @@ export default function ResultsScreen() {
   if (!hasSearched) return <Redirect href="/home" />;
 
   const isSample = leads.some((l) => l.id.startsWith("sample-"));
+  const isFallback =
+    !isSample &&
+    leads.some((l) => l.source === "Craigslist" || l.source === "RemoteOK");
   const area = [params.city, params.state].filter(Boolean).join(", ");
   const subtitle = params.remote
     ? "Remote jobs"
@@ -128,6 +131,14 @@ export default function ResultsScreen() {
           <Text style={styles.bannerText}>
             Showing sample listings. Add a SEARCHAPI_KEY to enable live Google
             Jobs results.
+          </Text>
+        </View>
+      ) : isFallback ? (
+        <View style={styles.banner}>
+          <Ionicons name="information-circle" size={18} color={colors.info} />
+          <Text style={styles.bannerText}>
+            Job API unavailable — showing public listings from Craigslist and
+            other free sources instead.
           </Text>
         </View>
       ) : null}

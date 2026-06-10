@@ -23,6 +23,7 @@ const defaultParams: SearchParams = {
   zip: "",
   radiusMiles: 25,
   remote: false,
+  query: "",
   preferencesText: "",
 };
 
