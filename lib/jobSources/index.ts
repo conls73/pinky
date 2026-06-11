@@ -2,6 +2,11 @@ import { Lead } from "@/types";
 import { craigslist } from "./craigslist";
 import { googleJobs } from "./googleJobs";
 import { remoteok } from "./remoteok";
+import { indeedFallback } from "./indeedFallback";
+import { monsterFallback } from "./monsterFallback";
+import { ziprecruiterFallback } from "./ziprecruiterFallback";
+import { thumbtackFallback } from "./thumbtackFallback";
+import { googleJobsFallback } from "./googleJobsFallback";
 import { indeed, linkedin, nextdoor, thumbtack, ziprecruiter } from "./stubs";
 import { JobSource, JobSourceQuery } from "./types";
 
@@ -19,7 +24,7 @@ export const PRIMARY_SOURCES: JobSource[] = [
 // Fallback tier: keyless scrapers/public feeds. Only run when the primary
 // tier returns nothing (no key configured, quota exhausted, or API error) so
 // paid credits stay the default and scraping stays low-volume.
-export const FALLBACK_SOURCES: JobSource[] = [craigslist, remoteok];
+export const FALLBACK_SOURCES: JobSource[] = [craigslist, remoteok, indeedFallback, monsterFallback, ziprecruiterFallback, thumbtackFallback, googleJobsFallback];
 
 export function configuredSources(): JobSource[] {
   return PRIMARY_SOURCES.filter((s) => s.isConfigured());
